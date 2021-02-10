@@ -1,6 +1,6 @@
 # uptimerobot.com prometheus exporter 
 
-[![Docker Image Version (latest semver)](https://img.shields.io/docker/v/lekpamartin/uptimerobot_exporter)](https://hub.docker.com/r/lekpamartin/uptimerobot_exporter/tags)
+[![Docker Image Version (latest semver)](https://img.shields.io/docker/v/korvoj/uptimerobot-exporter)](https://hub.docker.com/repository/docker/korvoj/uptimerobot-exporter/tags)
 
 ![Grafana Dashboard](dashboards/dashboard.PNG?raw=true "Grafana Dashboard")
 
@@ -58,6 +58,11 @@ or set the following environment variables:
 * number of down monitors : down_monitors
 * number of up monitors : up_monitors
 * number of paused monitors : paused_monitors
+* uptime ratio (7 days)
+* uptime ratio (30 days)
+* uptime ratio (180 days)
+* uptime ratio (365 days)
+* all time uptime ratio
 * Maximum monitor : monitor_limit
 * Monitor status (Monitors) : name, url, type, [keyword], [keyword_value], interval, status (color change with status)
 * Responste time : Minimum (min), maximum (max), average (avg) and current
@@ -71,4 +76,4 @@ or set the following environment variables:
 Enjoy !!!
 
 ## Docs
-Forked from https://github.com/hnrd/uptimerobot_exporter.git
+Forked from https://github.com/lekpamartin/uptimerobot_exporter
