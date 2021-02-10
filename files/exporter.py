@@ -1,15 +1,12 @@
 # FROM https://github.com/hnrd/uptimerobot_exporter/blob/master/exporter.py
 # Updated by Martin LEKPA
+# Updated by korvoj
 
 import argparse
 import http.server
 import os
 
-
 import requests
-
-
-
 
 
 ## Monitors
@@ -19,6 +16,8 @@ def _fetch_paginated(offset, api_key):
         'format': 'json',
         'response_times': 1,
         'response_times_limit': 1,
+        'custom_uptime_ratios': '7-30-180-365',
+        'all_time_uptime_ratio': 1,
         'offset': offset,
     }
     return requests.post(
@@ -26,8 +25,9 @@ def _fetch_paginated(offset, api_key):
         data=params,
     ).json()
 
+
 def fetch_data(api_key):
-    monitors = {'monitors':[]}
+    monitors = {'monitors': []}
     offset = 0
     response = _fetch_paginated(offset, api_key)
     for monitor in response['monitors']:
@@ -40,17 +40,18 @@ def fetch_data(api_key):
             monitors['monitors'].append(monitor)
     return monitors
 
+
 def format_prometheus(data):
     result = ''
     for item in data:
         if item.get('status') == 0:
-           value = 2
+            value = 2
         elif item.get('status') == 1:
-           value = 1
+            value = 1
         elif item.get('status') == 2:
-           value = 0
+            value = 0
         else:
-           value = 3
+            value = 3
         result += 'uptimerobot_status{{c1_name="{}",c2_url="{}",c3_type="{}",c4_sub_type="{}",c5_keyword_type="{}",c6_keyword_value="{}",c7_http_username="{}",c8_port="{}",c9_interval="{}"}} {}\n'.format(
             item.get('friendly_name'),
             item.get('url'),
@@ -64,14 +65,44 @@ def format_prometheus(data):
             value,
         )
         if item.get('status', 0) == 2:
+            uptime_ratios = item.get('custom_uptime_ratio').split('-')
             result += 'uptimerobot_response_time{{name="{}",type="{}",url="{}"}} {}\n'.format(
                 item.get('friendly_name'),
                 item.get('type'),
                 item.get('url'),
                 item.get('response_times').pop().get('value'),
             )
+            result += 'uptimerobot_uptime_ratio_7days{{name="{}",type="{}",url="{}"}} {}\n'.format(
+                item.get('friendly_name'),
+                item.get('type'),
+                item.get('url'),
+                uptime_ratios[0]
+            )
+            result += 'uptimerobot_uptime_ratio_30days{{name="{}",type="{}",url="{}"}} {}\n'.format(
+                item.get('friendly_name'),
+                item.get('type'),
+                item.get('url'),
+                uptime_ratios[1]
+            )
+            result += 'uptimerobot_uptime_ratio_180days{{name="{}",type="{}",url="{}"}} {}\n'.format(
+                item.get('friendly_name'),
+                item.get('type'),
+                item.get('url'),
+                uptime_ratios[2]
+            )
+            result += 'uptimerobot_uptime_ratio_365days{{name="{}",type="{}",url="{}"}} {}\n'.format(
+                item.get('friendly_name'),
+                item.get('type'),
+                item.get('url'),
+                uptime_ratios[3]
+            )
+            result += 'uptimerobot_uptime_ratio_alltime{{name="{}",type="{}",url="{}"}} {}\n'.format(
+                item.get('friendly_name'),
+                item.get('type'),
+                item.get('url'),
+                item.get('all_time_uptime_ratio')
+            )
     return result
-
 
 
 ## getAccountDetails
@@ -88,11 +119,13 @@ def fetch_accountdetails(api_key):
 
 
 def format_prometheus_accountdetails(data):
-    result = 'uptimerobot_accountdetails{name="%s",monitor_limit="%s",monitor_interval="%s",up_monitors="%s",down_monitors="%s",paused_monitors="%s"} 1\n' %(data['email'],data['monitor_limit'],data['monitor_interval'],data['up_monitors'],data['down_monitors'],data['paused_monitors'])
+    result = 'uptimerobot_accountdetails{name="%s",monitor_limit="%s",monitor_interval="%s",up_monitors="%s",down_monitors="%s",paused_monitors="%s"} 1\n' % (
+        data['email'], data['monitor_limit'], data['monitor_interval'], data['up_monitors'], data['down_monitors'],
+        data['paused_monitors'])
     return result
 
-## End
 
+## End
 
 
 ## public status pages
@@ -109,16 +142,15 @@ def fetch_psp(api_key):
 
 
 def format_prometheus_psp(data):
-  result = ''
-  for item in data:
-    result += 'uptimerobot_psp{{c1_name="{}",c2_custom_url="{}",c3_standard_url="{}",c4_monitors="{}",c5_sort="{}"}} {}\n'.format(item.get('friendly_name'),item.get('custom_url'),item.get('standard_url'),item.get('monitors'),item.get('sort'),item.get('status'))
-  return result
+    result = ''
+    for item in data:
+        result += 'uptimerobot_psp{{c1_name="{}",c2_custom_url="{}",c3_standard_url="{}",c4_monitors="{}",c5_sort="{}"}} {}\n'.format(
+            item.get('friendly_name'), item.get('custom_url'), item.get('standard_url'), item.get('monitors'),
+            item.get('sort'), item.get('status'))
+    return result
+
 
 ## End
-
-
-
-
 
 
 class ReqHandler(http.server.BaseHTTPRequestHandler):
